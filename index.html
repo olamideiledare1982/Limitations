@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Limitations">
+<meta name="theme-color" content="#0a0a0f">
+<link rel="manifest" href="manifest.json">
+<title>757/767 Limitations</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card-q: #141420;
+    --card-a: #0d1a2e;
+    --border: #2a2a3a;
+    --accent: #4fc3f7;
+    --accent-dim: #1a3a4a;
+    --text: #e8e8f0;
+    --text-dim: #8888aa;
+    --missed: #ef5350;
+    --missed-dim: #3a1010;
+    --good: #66bb6a;
+    --good-dim: #0d2a10;
+    --flip-dur: 0.45s;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+
+  /* ── LAYOUT ── */
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: env(safe-area-inset-top, 12px) 16px env(safe-area-inset-bottom, 16px);
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0 8px;
+    flex-shrink: 0;
+  }
+
+  .title-block h1 {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+  }
+
+  .title-block .subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+
+  .mode-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--missed);
+    background: var(--missed-dim);
+    border: 1px solid var(--missed);
+    padding: 3px 8px;
+    border-radius: 20px;
+    display: none;
+  }
+  .mode-badge.visible { display: block; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap {
+    flex-shrink: 0;
+    padding: 4px 0 10px;
+  }
+
+  .progress-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width 0.3s ease;
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .missed-count {
+    color: var(--missed);
+  }
+
+  /* ── CARD AREA ── */
+  .card-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1200px;
+    padding: 8px 0;
+    min-height: 0;
+  }
+
+  .card-scene {
+    width: 100%;
+    height: 100%;
+    max-height: 420px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform var(--flip-dur) cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+
+  .card-scene.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .card-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 28px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .card-front {
+    background: var(--card-q);
+  }
+
+  .card-back {
+    background: var(--card-a);
+    transform: rotateY(180deg);
+  }
+
+  .face-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+    align-self: flex-start;
+  }
+
+  .card-text {
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.45;
+    text-align: center;
+    color: var(--text);
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .card-back .card-text {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .tap-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 20px;
+    align-self: center;
+    opacity: 0.6;
+  }
+
+  /* missed indicator on card */
+  .missed-dot {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--missed);
+    display: none;
+  }
+  .missed-dot.visible { display: block; }
+
+  /* ── ACTION ROW ── */
+  .actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    padding: 8px 0 4px;
+  }
+
+  .btn {
+    flex: 1;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.01em;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn:active { transform: scale(0.96); opacity: 0.8; }
+
+  .btn-prev {
+    background: var(--surface);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    flex: 0 0 52px;
+    font-size: 18px;
+    padding: 14px 4px;
+  }
+
+  .btn-missed {
+    background: var(--missed-dim);
+    color: var(--missed);
+    border: 1px solid var(--missed);
+  }
+
+  .btn-missed.active {
+    background: var(--missed);
+    color: #fff;
+  }
+
+  .btn-next {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    flex: 0 0 52px;
+    font-size: 18px;
+    padding: 14px 4px;
+  }
+
+  /* ── CONTROLS ROW ── */
+  .controls {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 4px 0 8px;
+  }
+
+  .ctrl {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 11px 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: var(--surface);
+    cursor: pointer;
+    text-align: center;
+    letter-spacing: 0.02em;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .ctrl:active { opacity: 0.7; }
+
+  .ctrl.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .ctrl.active-missed {
+    background: var(--missed-dim);
+    border-color: var(--missed);
+    color: var(--missed);
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    padding: 32px;
+  }
+
+  .empty-state.visible { display: flex; }
+
+  .empty-icon { font-size: 48px; }
+  .empty-title { font-size: 18px; font-weight: 600; color: var(--text); }
+  .empty-sub { font-size: 14px; line-height: 1.5; }
+
+  /* ── COMPLETE SCREEN ── */
+  .complete-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    text-align: center;
+    padding: 32px;
+  }
+
+  .complete-screen.visible { display: flex; }
+  .complete-icon { font-size: 56px; }
+  .complete-title { font-size: 22px; font-weight: 700; }
+  .complete-sub { font-size: 14px; color: var(--text-dim); line-height: 1.5; }
+
+  .btn-restart {
+    margin-top: 8px;
+    padding: 14px 32px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="title-block">
+      <h1>757 / 767 Limitations</h1>
+      <div class="subtitle" id="deckLabel">Full deck</div>
+    </div>
+    <div class="mode-badge" id="missedBadge">MISSED ONLY</div>
+  </header>
+
+  <div class="progress-wrap">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-label">
+      <span id="progressText">1 / 28</span>
+      <span class="missed-count" id="missedLabel"></span>
+    </div>
+  </div>
+
+  <!-- CARD -->
+  <div class="card-area" id="cardArea">
+    <div class="card-scene" id="cardScene">
+      <div class="card-face card-front">
+        <div class="missed-dot" id="missedDot"></div>
+        <div class="face-label">Question</div>
+        <div class="card-text" id="questionText"></div>
+        <div class="tap-hint">Tap to reveal answer</div>
+      </div>
+      <div class="card-face card-back">
+        <div class="face-label">Answer</div>
+        <div class="card-text" id="answerText"></div>
+      </div>
+    </div>
+
+    <!-- EMPTY STATE (missed mode, no missed cards) -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">✅</div>
+      <div class="empty-title">No missed cards</div>
+      <div class="empty-sub">Mark cards as missed while studying,<br>then come back here to drill them.</div>
+    </div>
+  </div>
+
+  <!-- COMPLETE SCREEN -->
+  <div class="complete-screen" id="completeScreen">
+    <div class="complete-icon">🎯</div>
+    <div class="complete-title" id="completeTitle">Deck Complete</div>
+    <div class="complete-sub" id="completeSub"></div>
+    <button class="btn-restart" id="btnRestart">Start Over</button>
+  </div>
+
+  <!-- ACTION ROW -->
+  <div class="actions" id="actionRow">
+    <button class="btn btn-prev" id="btnPrev" title="Previous">‹</button>
+    <button class="btn btn-missed" id="btnMissed">Mark Missed</button>
+    <button class="btn btn-next" id="btnNext" title="Next">›</button>
+  </div>
+
+  <!-- CONTROLS ROW -->
+  <div class="controls">
+    <button class="ctrl" id="btnShuffle">⇌ Shuffle</button>
+    <button class="ctrl" id="btnMissedMode">⚑ Missed Only</button>
+    <button class="ctrl" id="btnReset">↺ Reset</button>
+  </div>
+</div>
+
+<script>
+// ── CARD DATA ──
+const ALL_CARDS = [
+  { q: "Maximum Operating Pressure Altitude — 757", a: "42,000 ft" },
+  { q: "Maximum Operating Pressure Altitude — 767", a: "43,100 ft" },
+  { q: "Maximum Takeoff / Landing Tailwind Component", a: "15 knots" },
+  { q: "Maximum Takeoff / Landing Tailwind Component — 764 with EEC Alternate Mode (ALT)", a: "10 knots" },
+  { q: "Severe Turbulence Penetration Airspeed — 10,000 ft and above", a: "290 KIAS / .78 Mach" },
+  { q: "Severe Turbulence Penetration Airspeed — Below 10,000 ft", a: "250 KIAS" },
+  { q: "To minimize wear on the flap assembly, when extending flaps to positions ___ to ___, use placard speed minus 10 knots", a: "0 to 20" },
+  { q: "Takeoff Crosswind Component — Dry runway (condition code 6)", a: "40 knots" },
+  { q: "Landing Crosswind Component — Dry runway (condition code 6)", a: "40 knots" },
+  { q: "Takeoff Crosswind Component — Wet runway (condition code 5)", a: "25 knots" },
+  { q: "Landing Crosswind Component — Wet runway (condition code 5)", a: "40 knots" },
+  { q: "Icing conditions exist on the ground / for takeoff when OAT is:", a: "10°C or below" },
+  { q: "Icing conditions exist in flight when Total Air Temp (TAT) is:", a: "10°C or below" },
+  { q: "Autopilot Minimum Engagement Height", a: "800 ft AGL" },
+  { q: "Do not use FLCH on final approach below ___ ft", a: "1,000 ft AFE" },
+  { q: "Minimum altitude for ILS coupled approach — no autoland", a: "50 ft AGL" },
+  { q: "Minimum altitude for non-ILS approaches", a: "50 ft below MDA / DA" },
+  { q: "Autolandings must be made using Flaps ___ or ___", a: "Flaps 25 or 30" },
+  { q: "Engine Starter Duty Limits — 763 (Normal) First attempt minimum N2 before engagement", a: "0% N2 (zero)" },
+  { q: "Engine Starter Duty Limits — 763 (Normal) Second attempt minimum N2 before engagement", a: "0% N2 (zero)" },
+  { q: "Engine Start Duty Cycles (Normal) — 757", a: "Up to 2 min continuous → run to 0% N3 → up to 2 min → run to 0% N3 → up to 2 min → run to 0% N3 → cool 15 min" },
+  { q: "Engine Start Duty Cycles (Normal) — 764", a: "5 minutes ON, followed by ½ minute off per minute on" },
+  { q: "Engine Starter Re-engagement Speed — 757", a: "0% N3 recommended\n0–20% N3 normal\nRe-engagement not recommended above 20% N3 except for fire" },
+  { q: "Engine Starter Re-engagement Speed — 764", a: "0% N2 recommended\n0–20% N2 normal\n30% N2 permissible for purging fuel or to clear fire" },
+  { q: "Minimum Oil Quantity — 757 / 764 (ETOPS)", a: "18 Quarts" },
+  { q: "Minimum Oil Quantity — 757 / 764 (Non-ETOPS)", a: "16 Quarts" },
+  { q: "Minimum Oil Quantity — 763", a: "15 Quarts" },
+  { q: "Maximum Flaps Extension Altitude", a: "20,000 ft MSL" }
+];
+
+// ── STATE ──
+let deck = [...ALL_CARDS.keys()];   // indices into ALL_CARDS
+let cursor = 0;
+let missed = new Set();
+let shuffled = false;
+let missedMode = false;
+let isFlipped = false;
+
+// ── DOM ──
+const cardScene    = document.getElementById('cardScene');
+const questionText = document.getElementById('questionText');
+const answerText   = document.getElementById('answerText');
+const missedDot    = document.getElementById('missedDot');
+const progressFill = document.getElementById('progressFill');
+const progressText = document.getElementById('progressText');
+const missedLabel  = document.getElementById('missedLabel');
+const missedBadge  = document.getElementById('missedBadge');
+const deckLabel    = document.getElementById('deckLabel');
+const btnMissed    = document.getElementById('btnMissed');
+const btnShuffle   = document.getElementById('btnShuffle');
+const btnMissedMode= document.getElementById('btnMissedMode');
+const completeScreen = document.getElementById('completeScreen');
+const completeTitle  = document.getElementById('completeTitle');
+const completeSub    = document.getElementById('completeSub');
+const actionRow    = document.getElementById('actionRow');
+const emptyState   = document.getElementById('emptyState');
+const cardArea     = document.getElementById('cardArea');
+
+function buildDeck() {
+  if (missedMode) {
+    deck = [...missed];
+  } else {
+    deck = [...ALL_CARDS.keys()];
+  }
+  if (shuffled) shuffle(deck);
+  cursor = 0;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function currentCard() {
+  return deck.length > 0 ? ALL_CARDS[deck[cursor]] : null;
+}
+
+function render() {
+  const card = currentCard();
+  const showEmpty = missedMode && deck.length === 0;
+  const showComplete = !showEmpty && cursor >= deck.length && deck.length > 0;
+
+  // card scene visibility
+  cardScene.style.display = (showEmpty || showComplete) ? 'none' : '';
+  emptyState.classList.toggle('visible', showEmpty);
+  completeScreen.classList.toggle('visible', showComplete);
+  actionRow.style.visibility = (showEmpty || showComplete) ? 'hidden' : 'visible';
+
+  if (showComplete) {
+    const missedCount = missed.size;
+    completeTitle.textContent = 'Deck Complete!';
+    completeSub.textContent = missedCount === 0
+      ? 'Perfect run — no missed cards. 🎉'
+      : `You missed ${missedCount} card${missedCount !== 1 ? 's' : ''}. Use "Missed Only" to drill them.`;
+  }
+
+  if (!card || showEmpty || showComplete) {
+    updateProgress();
+    return;
+  }
+
+  // Reset flip
+  isFlipped = false;
+  cardScene.classList.remove('flipped');
+
+  questionText.textContent = card.q;
+  answerText.textContent = card.a;
+
+  const isMissed = missed.has(deck[cursor]);
+  missedDot.classList.toggle('visible', isMissed);
+  btnMissed.textContent = isMissed ? '✓ Missed' : 'Mark Missed';
+  btnMissed.classList.toggle('active', isMissed);
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = deck.length;
+  const current = Math.min(cursor + 1, total);
+  const pct = total === 0 ? 0 : ((cursor) / total) * 100;
+  progressFill.style.width = pct + '%';
+  progressText.textContent = total === 0 ? '— / —' : `${current} / ${total}`;
+  missedLabel.textContent = missed.size > 0 ? `${missed.size} missed` : '';
+  missedBadge.classList.toggle('visible', missedMode);
+  btnMissedMode.classList.toggle('active-missed', missedMode);
+  deckLabel.textContent = missedMode ? 'Missed cards only' : 'Full deck · ' + ALL_CARDS.length + ' cards';
+}
+
+// ── FLIP ──
+cardScene.addEventListener('click', () => {
+  if (cursor >= deck.length) return;
+  isFlipped = !isFlipped;
+  cardScene.classList.toggle('flipped', isFlipped);
+});
+
+// ── NEXT ──
+document.getElementById('btnNext').addEventListener('click', () => {
+  if (cursor < deck.length) cursor++;
+  render();
+});
+
+// ── PREV ──
+document.getElementById('btnPrev').addEventListener('click', () => {
+  if (cursor > 0) cursor--;
+  render();
+});
+
+// ── MARK MISSED ──
+btnMissed.addEventListener('click', () => {
+  if (!currentCard()) return;
+  const idx = deck[cursor];
+  if (missed.has(idx)) {
+    missed.delete(idx);
+  } else {
+    missed.add(idx);
+  }
+  render();
+});
+
+// ── SHUFFLE ──
+btnShuffle.addEventListener('click', () => {
+  shuffled = !shuffled;
+  btnShuffle.classList.toggle('active', shuffled);
+  buildDeck();
+  render();
+});
+
+// ── MISSED ONLY ──
+btnMissedMode.addEventListener('click', () => {
+  missedMode = !missedMode;
+  buildDeck();
+  render();
+});
+
+// ── RESET ──
+document.getElementById('btnReset').addEventListener('click', () => {
+  missed.clear();
+  missedMode = false;
+  shuffled = false;
+  btnShuffle.classList.remove('active');
+  buildDeck();
+  render();
+});
+
+// ── RESTART (complete screen) ──
+document.getElementById('btnRestart').addEventListener('click', () => {
+  buildDeck();
+  render();
+});
+
+// ── SWIPE SUPPORT ──
+let touchStartX = 0;
+cardArea.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+cardArea.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) < 50) return; // too short = tap (handled by click)
+  if (dx < -50) { // swipe left = next
+    if (cursor < deck.length) { cursor++; render(); }
+  } else if (dx > 50) { // swipe right = prev
+    if (cursor > 0) { cursor--; render(); }
+  }
+}, { passive: true });
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ── INIT ──
+buildDeck();
+render();
+</script>
+</body>
+</html>
